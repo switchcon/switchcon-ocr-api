@@ -15,5 +15,9 @@
   "scripts": {
     "start": "start app.js",
     "dev": "nodemon app.js"
+  },
+  "devDependencies": {
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
   }
 }
