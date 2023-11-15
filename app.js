@@ -1,8 +1,9 @@
-const express = require('express')
-const multer = require('multer');
+const express = require('express');
 const cors = require('cors');
 const { createWorker } = require('tesseract.js');
-
+const { getCategory } = require('./category.js')
+const bp = require('body-parser');
+const axios = require('axios');
 const router = express.Router();
 const app = express()
 // cross origin requests header
@@ -12,20 +13,36 @@ const corsOpt = {
 }
 app.use(cors(corsOpt))
 app.use(express.static('public'))
-
-const upload = multer({limit: {fileSize: 3 * 1024 * 1024}});
-
+app.use(bp.json());
+app.use(bp.urlencoded({
+    extended: true
+}));
 router.get("/", (req, res) => {
     res.sendFile('public/index.html')
 })
+
+async function fetchfile(url_)
+{
+    let v = await axios({
+        method: 'get',
+        url: url_,
+        responseType: 'stream'
+    })
+    let buf = []
+    for await (const r of v.data)
+        buf.push(r);
+    let fin = Buffer.concat(buf);
+    return fin;
+}
+
 // when post request received 
-router.post('/upload', upload.single('image'),  async (req, res, err) => { 
-    if (req.file)
+router.post('/upload',  async (req, res, err) => { 
+    let file = await fetchfile(req.body.imgUrl)
+    if (file)
     {
-        let file = req.file;
         try{
             const worker = await createWorker('kor+eng');
-            let v1 = await Promise.all([worker.recognize(file.buffer)]);
+            let v1 = await Promise.all([worker.recognize(file)]);
             let t = v1[0].data.text
             let vs = t.split('\n').map(s => s.replace(/\s+/g, ' '))
             let z1 =  vs
@@ -34,11 +51,13 @@ router.post('/upload', upload.single('image'),  async (req, res, err) => {
                                                         .reduce((n, m) => n || m))
             let z2 = vs.filter(s => s.match(/([0-9\s]{12,20})/))[0].replace(/\D/g, "");
             let zx = z1.map((x) => x.split(/\s(.*)/g));
-            let mm = {}
+            let nameindex = vs.map(v =>/[0-9\s]{12,20}/g.test(v)).indexOf(true);
+            let mm = {};
             mm[zx[0][0]] = zx[0][1];
             mm[zx[1][0]] = zx[1][1];
             mm[zx[2][0]] = zx[2][1];
-            if (v1) res.json({expireDate: mm['유효기간'], orderNum: mm['주문번호'], storeName: mm['교환처'],barcodeNum: z2});
+            let modified = mm['교환처'].replaceAll('8', 'B').replaceAll('9', 'Q').replaceAll('0', 'Q').replaceAll('6', 'Q')
+            if (v1) res.json({productName: vs[nameindex - 1], expireDate: mm['유효기간'], orderNum: mm['주문번호'], storeName: modified, category:getCategory(modified), barcodeNum: z2});
             else res.json({status: "failed!"});
         }catch(e)
         {
