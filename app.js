@@ -36,13 +36,13 @@ async function fetchfile(url_)
 }
 
 // when post request received 
-router.post('/upload',  async (req, res, err) => { 
-    let file = await fetchfile(req.body.imgUrl)
-    if (file)
+router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res, err) => { 
+    let f = req.body;
+    if (f)
     {
         try{
-            const worker = await createWorker('kor+eng');
-            let v1 = await Promise.all([worker.recognize(file)]);
+            const worker = await createWorker('kor+eng').catch(e => res.json({status: "failed", msg: e.toString()}));
+            let v1 = await Promise.all([worker.recognize(Buffer.from(f,'base64'))]).catch(e => res.json({status: "failed", msg: e.toString()}));
             let t = v1[0].data.text
             let vs = t.split('\n').map(s => s.replace(/\s+/g, ' '))
             let z1 =  vs
