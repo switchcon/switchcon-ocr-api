@@ -6,13 +6,47 @@
     <title>Document</title>
 </head>
 <body>
+    <script>
+        const sendb64img = 
+        async () => 
+        {
+            let regexp1 = /(?<=data:\w+\/?\w+;base64,).*/g
+            let fs = document.getElementById('use');
+            let reader = new FileReader();
+            reader.onloadend = function()
+            {
+                fetch("/upload",{
+                        method:"POST",
+                        headers: {
+                            "Content-Type": "text/plain"
+                        },
+                        body: regexp1.exec(reader.result)[0],
+                    }).then(e => {stream2text(e); alert("Success!")}).catch(e => console.log(e));
+            }
+            reader.readAsDataURL(fs.files[0]);
+        }
+        const stream2text = async (body) => {
+                let value = await body.json()
+                console.log(value);
+                document.getElementById('results').innerText = JSON.stringify(value);
+            }
+    </script>
     <div>
         <p>파일 업로드 테스트</p>
+        <input id="use" type="file" name="image" accept="image/png, image/jpeg, image/webp, image/gif"/>
+        <button onclick="sendb64img()">제출하기</button>
+        <!--
         <form action="/upload" enctype="multipart/form-data" method="post">
             <input type="file" name="image" accept="image/png, image/jpeg, image/webp, image/gif"/>
             <input type="submit" id="submit">
         </form>
-            
+        -->
+        <p>
+            결과
+        </p>
+        <div id="results">
+
+        </div>
     </div>
 </body>
 </html>
