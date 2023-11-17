@@ -41,7 +41,6 @@ router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => 
     let f = req.body;
     if (f)
     {
-        console.log(f);
         try{
             
             let v1 = await Promise.all([worker.recognize(Buffer.from(f,'base64'))])
