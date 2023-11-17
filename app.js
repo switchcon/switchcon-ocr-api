@@ -4,8 +4,9 @@ const { createWorker } = require('tesseract.js');
 const { getCategory } = require('./category.js')
 const bp = require('body-parser');
 const axios = require('axios');
+const bpErrorHandler = require('express-body-parser-error-handler');
 const router = express.Router();
-const app = express()
+const app = express();
 // cross origin requests header
 const corsOpt = {
     origin: "*",
@@ -17,6 +18,7 @@ app.use(bp.json());
 app.use(bp.urlencoded({
     extended: true
 }));
+app.use(bpErrorHandler());
 router.get("/", (req, res) => {
     res.sendFile('public/index.html')
 })
@@ -36,7 +38,7 @@ async function fetchfile(url_)
 }
 
 // when post request received 
-router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res, err) => { 
+router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => { 
     let f = req.body;
     if (f)
     {
