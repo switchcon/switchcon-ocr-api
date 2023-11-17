@@ -41,6 +41,7 @@ router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => 
     let f = req.body;
     if (f)
     {
+        console.log(f);
         try{
             
             let v1 = await Promise.all([worker.recognize(Buffer.from(f,'base64'))])
@@ -59,16 +60,16 @@ router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => 
             mm[zx[2][0]] = zx[2][1];
             let modified = mm['교환처'].replaceAll('8', 'B').replaceAll('9', 'Q').replaceAll('0', 'Q').replaceAll('6', 'Q')
             if (v1) res.json({productName: vs[nameindex - 1], expireDate: mm['유효기간'], orderNum: mm['주문번호'], storeName: modified, category:getCategory(modified), barcodeNum: z2});
-            else res.json({status: "failed!"});
+            else res.status(401).json({status: "failed!"});
         }catch(e)
         {
-            res.json({status: "failed", msg: e.toString()});
+            res.status(401).json({status: "failed", msg: e.toString()});
             console.log('Error Occured', e.toString());
         }finally{
             //work
         }
     }
-    else res.json({status: "failed!"});
+    else res.status(404).json({status: "failed!"});
 })
 
 app.use(router)
