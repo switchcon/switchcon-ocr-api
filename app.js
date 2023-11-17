@@ -7,6 +7,7 @@ const axios = require('axios');
 const bpErrorHandler = require('express-body-parser-error-handler');
 const router = express.Router();
 const app = express();
+const process = require('node:process');
 // cross origin requests header
 const corsOpt = {
     origin: "*",
@@ -18,24 +19,22 @@ app.use(bp.json());
 app.use(bp.urlencoded({
     extended: true
 }));
+
+let worker;
+(async () => 
+    {
+        worker = await createWorker("kor+eng",undefined,{
+            errorHandler: (err) => err,
+        });
+    }
+)();
+
 app.use(bpErrorHandler());
 router.get("/", (req, res) => {
     res.sendFile('public/index.html')
 })
 
-async function fetchfile(url_)
-{
-    let v = await axios({
-        method: 'get',
-        url: url_,
-        responseType: 'stream'
-    })
-    let buf = []
-    for await (const r of v.data)
-        buf.push(r);
-    let fin = Buffer.concat(buf);
-    return fin;
-}
+
 
 // when post request received 
 router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => { 
@@ -43,8 +42,8 @@ router.post('/upload',  bp.text({type:"*/*", limit: "5mb"}),async (req, res) => 
     if (f)
     {
         try{
-            const worker = await createWorker('kor+eng').catch(e => res.json({status: "failed", msg: e.toString()}));
-            let v1 = await Promise.all([worker.recognize(Buffer.from(f,'base64'))]).catch(e => res.json({status: "failed", msg: e.toString()}));
+            
+            let v1 = await Promise.all([worker.recognize(Buffer.from(f,'base64'))])
             let t = v1[0].data.text
             let vs = t.split('\n').map(s => s.replace(/\s+/g, ' '))
             let z1 =  vs
